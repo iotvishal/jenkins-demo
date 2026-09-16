@@ -7,28 +7,30 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh '''
-                    echo "===== JENKINS WORKSPACE ====="
-                    pwd
+                    echo "===== BUILD TEST IMAGE ====="
 
-                    echo "----- files -----"
-                    find . -maxdepth 2 -type f -print
+                    docker build \
+                        -f Dockerfile.test \
+                        -t jenkins-demo-test:${BUILD_NUMBER} \
+                        .
 
-                    echo "===== DOCKER MOUNT TEST ====="
+                    echo "===== RUN TESTS ====="
 
                     docker run --rm \
-                        -v "$PWD:/app" \
-                        -w /app \
-                        python:3.12-slim \
-                        bash -c '
-                            echo "Inside Python container:"
-                            pwd
-
-                            echo "----- files -----"
-                            find . -maxdepth 2 -type f -print
-                        '
+                        jenkins-demo-test:${BUILD_NUMBER}
                 '''
             }
         }
 
+    }
+
+    post {
+        success {
+            echo 'TESTS PASSED'
+        }
+
+        failure {
+            echo 'TESTS FAILED'
+        }
     }
 }
